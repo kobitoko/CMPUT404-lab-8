@@ -35,7 +35,7 @@ function preload() {
     game.load.spritesheet('player', 'assets/spaceman.png', 16, 16);
 
 }
-
+var myText = null;
 var map;
 var layer;
 var cursors;
@@ -84,6 +84,8 @@ function create() {
 
     this.client = new Client();
     this.client.openConnection();
+    // Connection text.
+    myText = game.add.text(0, 0, "started (not yet connected)", { font: "14px Arial", fill: "#ff0044"});
 
 }
 
@@ -101,10 +103,11 @@ function guid() {
 // Taken from https://gist.github.com/awwong1/20b3acea02019f43a88f
 // Added the client WebSocket instantiation.
 function Client() {
-
+    // This constructor does nothing!
 }
 
 Client.prototype.openConnection = function() {
+  //uf00.cs.ualberta.ca:8080
   this.ws = new WebSocket("ws://127.0.0.1:8080");
   this.connected = false;
   this.ws.onmessage = this.onMessage.bind(this);
