@@ -39,7 +39,10 @@ function preload() {
 var map;
 var layer;
 var cursors;
-var player;
+var players = {};
+var id = guid();
+players[id] = {};
+var player = players[id];
 
 function create() {
 
@@ -79,7 +82,66 @@ function create() {
     var help = game.add.text(16, 16, 'Arrows to move', { font: '14px Arial', fill: '#ffffff' });
     help.fixedToCamera = true;
 
+    this.client = new Client();
+    this.client.openConnection();
+
 }
+
+// Taken from http://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript/105074#105074
+function guid() {
+  function s4() {
+    return Math.floor((1 + Math.random()) * 0x10000)
+      .toString(16)
+      .substring(1);
+  }
+  return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+    s4() + '-' + s4() + s4() + s4();
+}
+
+// Taken from https://gist.github.com/awwong1/20b3acea02019f43a88f
+// Added the client WebSocket instantiation.
+function Client() {
+
+}
+
+Client.prototype.openConnection = function() {
+  this.ws = new WebSocket("ws://127.0.0.1:8080");
+  this.connected = false;
+  this.ws.onmessage = this.onMessage.bind(this);
+  this.ws.onerror = this.displayError.bind(this);
+  this.ws.onopen = this.connectionOpen.bind(this);
+};
+
+Client.prototype.connectionOpen = function() {
+  this.connected = true;
+  myText.text = 'connected\n';
+};
+
+/* Client.prototype.onMessage = function(message) {
+  myText.text = myText.text + message.data;
+  var msg = JSON.parse(message.data);
+  sprite.x = msg.x;
+  sprite.y = msg.y;
+}; */
+
+// Taken from https://gist.github.com/awwong1/2280e439b81c0fa666f7
+Client.prototype.onMessage = function(message) {
+  var msg = JSON.parse(message.data);
+  for (var key in msg) {
+    if (key in players) {
+      players[key].x = msg[key].x;
+      players[key].y = msg[key].y;
+    } else {
+      players[key] = game.add.sprite(48, 48, 'player', 1);
+      players[key].x = msg[key].x;
+      players[key].y = msg[key].y;
+    }
+  }
+};
+
+Client.prototype.displayError = function(err) {
+  console.log('Websocketerror: ' + err);
+};
 
 function update() {
 
@@ -111,7 +173,15 @@ function update() {
     {
         player.animations.stop();
     }
-
+    
+    if (this.client.connected) {
+        this.client.ws.send(JSON.stringify({
+            uuid: id,
+            x: player.x,
+            y: player.y
+        }));
+    }
+    
 }
 
 function render() {
